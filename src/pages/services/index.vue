@@ -108,7 +108,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, computed } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { api, absoluteApiUrl, uploadFile } from "@/api/client";
 import { useAppStore } from "@/stores/useAppStore";
@@ -121,9 +121,22 @@ const loading = ref(true);
 const error = ref("");
 const items = ref<any[]>([]);
 
+interface NotificationsResponse {
+  notifications?: any[];
+}
+
+interface DashboardResponse {
+  inviteCode?: string;
+  campaigns?: any[];
+}
+
+interface RecordsResponse {
+  records?: any[];
+}
+
 // 通知
 async function loadNotifications() {
-  const res = await api("/api/patient/notifications");
+  const res = await api<NotificationsResponse>("/api/patient/notifications");
   items.value = res.notifications || [];
   app.loadDashboard(true);
 }
@@ -153,7 +166,7 @@ async function loadInvite() {
   } catch (e: any) {
     if (e?.statusCode !== 404) throw e;
   }
-  const db = await api("/api/patient/dashboard");
+  const db = await api<DashboardResponse>("/api/patient/dashboard");
   dashboard.value = db;
   campaigns.value = db.campaigns || [];
 }
@@ -181,11 +194,11 @@ const content = ref("");
 const attachments = ref<any[]>([]);
 
 async function loadRecords() {
-  const res = await api("/api/patient/menstrual-records");
+  const res = await api<RecordsResponse>("/api/patient/menstrual-records");
   items.value = res.records || [];
 }
 async function loadDoctorRecords() {
-  const res = await api("/api/patient/doctor-records");
+  const res = await api<RecordsResponse>("/api/patient/doctor-records");
   items.value = res.records || [];
 }
 function absolute(url: string) { return absoluteApiUrl(url); }
