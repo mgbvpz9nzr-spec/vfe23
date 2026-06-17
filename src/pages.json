@@ -75,17 +75,17 @@
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "",
     "navigationBarBackgroundColor": "#ffffff",
-    "backgroundColor": "#fafafa"
+    "backgroundColor": "#f1f5f9"
   },
   "tabBar": {
-    "color": "#a1a1aa",
-    "selectedColor": "#ec4899",
+    "color": "#64748b",
+    "selectedColor": "#0284c7",
     "backgroundColor": "#ffffff",
     "borderStyle": "white",
     "list": [
-      { "pagePath": "pages/home/index", "text": "首页", "iconPath": "static/tabbar/home-normal.png", "selectedIconPath": "static/tabbar/home-selected.png" },
+      { "pagePath": "pages/home/index", "text": "工作台", "iconPath": "static/tabbar/home-normal.png", "selectedIconPath": "static/tabbar/home-selected.png" },
       { "pagePath": "pages/period/index", "text": "周期", "iconPath": "static/tabbar/period-normal.png", "selectedIconPath": "static/tabbar/period-selected.png" },
-      { "pagePath": "pages/chat/index", "text": "小美", "iconPath": "static/tabbar/chat-normal.png", "selectedIconPath": "static/tabbar/chat-selected.png" },
+      { "pagePath": "pages/chat/index", "text": "AI问询", "iconPath": "static/tabbar/chat-normal.png", "selectedIconPath": "static/tabbar/chat-selected.png" },
       { "pagePath": "pages/health/index", "text": "档案", "iconPath": "static/tabbar/health-normal.png", "selectedIconPath": "static/tabbar/health-selected.png" },
       { "pagePath": "pages/profile/index", "text": "我的", "iconPath": "static/tabbar/profile-normal.png", "selectedIconPath": "static/tabbar/profile-selected.png" }
     ]

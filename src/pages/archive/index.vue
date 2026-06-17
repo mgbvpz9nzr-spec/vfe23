@@ -1,67 +1,75 @@
 <template>
   <view class="page archive-page">
     <ClinicTopBar show-back />
-    <text class="archive-title">健康档案</text>
-    <text class="archive-desc">您和医生共同维护的记录，双方都能看到</text>
+    <view class="archive-header">
+      <text class="archive-title">临床健康档案</text>
+      <text class="archive-desc">供医患双方共同阅览的临床记录资料库</text>
+    </view>
 
-    <!-- 新增记录 -->
+    <!-- 新增记录表单 -->
     <view class="archive-form card">
-      <textarea v-model="content" class="archive-form__textarea" maxlength="2000" placeholder="写下想告诉医生的内容，或记录今天的身体感受…" />
-      <view class="archive-form__images">
-        <view v-for="(file, i) in attachments" :key="file.url" class="archive-form__thumb" @click="preview(file.url)">
+      <text class="form-label">补充病史或临床表现</text>
+      <textarea v-model="content" class="form-textarea" maxlength="2000" placeholder="请输入详实的病史、症状描述或化验结果说明..." />
+      
+      <text class="form-label">附件影像资料 (最多3张)</text>
+      <view class="image-grid">
+        <view v-for="(file, i) in attachments" :key="file.url" class="image-thumb" @click="preview(file.url)">
           <image :src="absoluteUrl(file.url)" mode="aspectFill" />
-          <text class="archive-form__thumb-del" @click.stop="attachments = attachments.filter((_, idx) => idx !== i)">×</text>
+          <view class="image-del" @click.stop="attachments.splice(i, 1)">×</view>
         </view>
-        <view v-if="attachments.length < 3" class="archive-form__add" @click="chooseImages">
-          <text class="archive-form__add-icon">+</text>
-          <text>图片</text>
+        <view v-if="attachments.length < 3" class="image-add" @click="chooseImages">
+          <text class="image-add__icon">+</text>
+          <text class="image-add__text">上传资料</text>
         </view>
       </view>
-      <button class="archive-form__submit" :loading="submitting" :disabled="!canSubmit" @click="saveRecord">保存记录</button>
+      
+      <button class="btn-primary submit-btn" :loading="submitting" :disabled="!canSubmit" @click="saveRecord">提交归档</button>
     </view>
 
     <!-- 记录列表 -->
-    <view v-if="loading" class="archive-loading">
-      <text>加载中…</text>
-    </view>
+    <view class="section-title">档案记录明细</view>
+    <view v-if="loading" class="empty-state">数据拉取中...</view>
     <template v-else-if="records.length">
-      <view class="archive-list">
-        <view v-for="item in records" :key="item.id" class="archive-item card">
-          <view class="archive-item__head">
-            <view class="archive-item__author" :class="{ 'is-patient': item.authorRole === 'PATIENT' }">
-              <text class="archive-item__avatar">{{ item.authorRole === 'PATIENT' ? '我' : '医' }}</text>
-              <view>
-                <text class="archive-item__name">{{ item.authorRole === 'PATIENT' ? '我' : (item.authorName || '医生') }}</text>
-                <text class="archive-item__role">{{ item.authorRole === 'PATIENT' ? '患者' : '医生' }}</text>
-              </view>
+      <view class="record-list">
+        <view v-for="item in records" :key="item.id" class="record-card card">
+          <view class="record-card__head">
+            <view class="record-author">
+              <text class="author-badge" :class="item.authorRole === 'PATIENT' ? 'author-badge--patient' : 'author-badge--doctor'">
+                {{ item.authorRole === 'PATIENT' ? '患者' : '医师' }}
+              </text>
+              <text class="author-name">{{ item.authorRole === 'PATIENT' ? '我' : (item.authorName || '主治医师') }}</text>
             </view>
-            <view class="archive-item__meta">
-              <text class="archive-item__time">{{ formatDate(item.createdAt) }}</text>
-              <text v-if="item.authorRole === 'PATIENT'" class="archive-item__delete" @click="removeRecord(item.id)">删除</text>
-            </view>
+            <text class="record-time">{{ formatDate(item.createdAt) }}</text>
           </view>
-          <text v-if="item.content" class="archive-item__content">{{ item.content }}</text>
-          <view v-if="imageList(item.attachments).length" class="archive-item__images">
-            <image v-for="url in imageList(item.attachments)" :key="url" class="archive-item__img" :src="absoluteUrl(url)" mode="aspectFill" @click="preview(url)" />
+          
+          <text v-if="item.content" class="record-content">{{ item.content }}</text>
+          
+          <view v-if="imageList(item.attachments).length" class="record-images">
+            <image v-for="url in imageList(item.attachments)" :key="url" class="record-image" :src="absoluteUrl(url)" mode="aspectFill" @click="preview(url)" />
+          </view>
+          
+          <view class="record-card__footer" v-if="item.authorRole === 'PATIENT'">
+            <text class="btn-text-danger" @click="removeRecord(item.id)">撤销此记录</text>
           </view>
         </view>
       </view>
     </template>
-    <view v-else class="archive-empty">
-      <text class="archive-empty__icon">📋</text>
-      <text>还没有任何记录</text>
-      <text class="archive-empty__sub">写下第一条记录，和医生一起管理您的健康。</text>
+    <view v-else class="empty-state">
+      <text>数据库中暂无存档资料。</text>
     </view>
 
     <!-- 删除二次确认 -->
-    <view v-if="deleteTarget" class="archive-overlay" @click="cancelRemove">
-      <view class="archive-dialog" @click.stop>
-        <text class="archive-dialog__icon">×</text>
-        <text class="archive-dialog__title">删除这条健康档案？</text>
-        <text class="archive-dialog__copy">删除后无法恢复，医生也将无法再查看这条记录。</text>
-        <view class="archive-dialog__actions">
-          <button class="archive-dialog__quiet" @click="cancelRemove">暂不删除</button>
-          <button class="archive-dialog__danger" :loading="removing" @click="confirmRemove">确认删除</button>
+    <view v-if="deleteTarget" class="overlay" @click="cancelRemove">
+      <view class="dialog" @click.stop>
+        <view class="dialog-header">
+          <text class="dialog-title">警告：撤销临床记录</text>
+        </view>
+        <view class="dialog-body">
+          <text>确认将此条记录移出临床档案库？操作不可逆。</text>
+        </view>
+        <view class="dialog-footer">
+          <button class="btn-secondary flex-1" @click="cancelRemove">取消操作</button>
+          <button class="btn-danger flex-1" :loading="removing" @click="confirmRemove">确认撤销</button>
         </view>
       </view>
     </view>
@@ -86,22 +94,15 @@ const removing = ref(false);
 
 const canSubmit = computed(() => content.value.trim() || attachments.value.length > 0);
 
-function absoluteUrl(path: string): string {
-  return absoluteApiUrl(path);
-}
-
-function formatDate(iso?: string): string {
-  return iso?.slice(0, 10) || "—";
-}
+function absoluteUrl(path: string): string { return absoluteApiUrl(path); }
+function formatDate(iso?: string): string { return iso?.slice(0, 16).replace("T", " ") || "—"; }
 
 function imageList(raw: unknown): string[] {
   if (Array.isArray(raw)) return raw.map((item: any) => typeof item === "string" ? item : item.url);
   try { return JSON.parse(raw as string || "[]"); } catch { return []; }
 }
 
-function preview(url: string) {
-  uni.previewImage({ urls: [absoluteApiUrl(url)] });
-}
+function preview(url: string) { uni.previewImage({ urls: [absoluteApiUrl(url)] }); }
 
 function chooseImages() {
   uni.chooseImage({
@@ -112,7 +113,7 @@ function chooseImages() {
           const uploaded = await uploadFile(path);
           attachments.value = [...attachments.value, uploaded];
         } catch (e: any) {
-          app.showToast(e?.message || "图片上传失败", "error");
+          app.showToast(e?.message || "影像上传错误", "error");
         }
       }
     },
@@ -130,22 +131,16 @@ async function saveRecord() {
     content.value = "";
     attachments.value = [];
     await loadRecords();
-    app.showToast("记录已保存", "success");
+    app.showToast("资料已归档", "success");
   } catch (e: any) {
-    app.showToast(e?.message || "保存失败", "error");
+    app.showToast(e?.message || "网络存储异常", "error");
   } finally {
     submitting.value = false;
   }
 }
 
-function removeRecord(id: string) {
-  deleteTarget.value = id;
-}
-
-function cancelRemove() {
-  if (removing.value) return;
-  deleteTarget.value = null;
-}
+function removeRecord(id: string) { deleteTarget.value = id; }
+function cancelRemove() { if (removing.value) return; deleteTarget.value = null; }
 
 async function confirmRemove() {
   if (!deleteTarget.value || removing.value) return;
@@ -155,9 +150,9 @@ async function confirmRemove() {
     await menstrualApi.deleteRecord(id);
     records.value = records.value.filter((r) => r.id !== id);
     deleteTarget.value = null;
-    app.showToast("记录已删除", "success");
+    app.showToast("档案已撤销", "success");
   } catch (e: any) {
-    app.showToast(e?.message || "删除失败", "error");
+    app.showToast(e?.message || "服务器操作失败", "error");
   } finally {
     removing.value = false;
   }
@@ -168,61 +163,62 @@ async function loadRecords() {
     const res = await menstrualApi.fetchRecords();
     records.value = res.records ?? [];
   } catch (e: any) {
-    app.showToast(e?.message || "加载失败", "error");
+    app.showToast(e?.message || "同步失败", "error");
   } finally {
     loading.value = false;
   }
 }
 
-onMounted(() => {
-  loadRecords();
-});
+onMounted(() => { loadRecords(); });
 </script>
 
 <style lang="scss" scoped>
-.archive-page { min-height: 100vh; padding: 0 $gap-md 80rpx; }
-.archive-title { display: block; padding-top: $gap-md; color: $ink; font-size: $font-xl; font-weight: 800; }
-.archive-desc { display: block; margin-top: 4rpx; color: $muted; font-size: $font-xs; }
+.archive-page { min-height: 100vh; padding: $gap-md $gap-md 80rpx; }
+.archive-header { padding: $gap-sm 0 $gap-md; }
+.archive-title { display: block; font-size: $font-xl; font-weight: 700; color: $ink; margin-bottom: 8rpx;}
+.archive-desc { font-size: $font-sm; color: $muted; }
 
-.archive-form { padding: $gap-lg; margin-top: $gap-lg; }
-.archive-form__textarea { width: 100%; min-height: 180rpx; box-sizing: border-box; margin-bottom: $gap-sm; padding: $gap-md; border: 1px solid $line; border-radius: $radius-md; background: $surface; color: $ink; font-size: $font-sm; line-height: 1.7; }
-.archive-form__images { display: flex; flex-wrap: wrap; gap: 12rpx; margin-bottom: $gap-md; }
-.archive-form__thumb { position: relative; width: 144rpx; height: 144rpx; border-radius: $radius-md; overflow: hidden; }
-.archive-form__thumb image { width: 100%; height: 100%; }
-.archive-form__thumb-del { position: absolute; top: 0; right: 0; display: grid; width: 40rpx; height: 40rpx; place-items: center; border-radius: 0 0 0 $radius-md; background: rgba(0,0,0,.55); color: #fff; font-size: 28rpx; line-height: 1; }
-.archive-form__add { display: flex; width: 144rpx; height: 144rpx; flex-direction: column; align-items: center; justify-content: center; gap: 2rpx; border: 2rpx dashed #e4e4e7; border-radius: $radius-md; color: $rose-dark; }
-.archive-form__add-icon { font-size: 36rpx; font-weight: 700; }
-.archive-form__add text:last-child { font-size: 20rpx; }
-.archive-form__submit { width: 100%; border-radius: $radius-full; background: $ink; color: #fff; font-size: $font-sm; font-weight: 700; }
-.archive-form__submit[disabled] { background: #e4e4e7; color: $muted; }
+.form-label { display: block; font-size: 24rpx; font-weight: 600; color: $ink; margin-bottom: 12rpx; margin-top: $gap-sm;}
+.form-label:first-child { margin-top: 0; }
+.form-textarea { width: 100%; min-height: 200rpx; padding: 20rpx; background: $surface; border: 1px solid $line; border-radius: $radius-sm; font-size: $font-sm; color: $ink; box-sizing: border-box; }
 
-.archive-list { display: flex; flex-direction: column; gap: $gap-sm; margin-top: $gap-md; }
-.archive-item { padding: $gap-lg; }
-.archive-item__head { display: flex; align-items: center; justify-content: space-between; gap: $gap-sm; }
-.archive-item__author { display: flex; align-items: center; gap: $gap-sm; }
-.archive-item__author.is-patient .archive-item__avatar { background: $rose-dark; color: #fff; }
-.archive-item__avatar { display: grid; width: 64rpx; height: 64rpx; flex: 0 0 auto; place-items: center; border-radius: 50%; background: #e4e4e7; color: $ink; font-size: 24rpx; font-weight: 800; }
-.archive-item__name { display: block; color: $ink; font-size: $font-sm; font-weight: 700; }
-.archive-item__role { display: block; color: $muted; font-size: 20rpx; }
-.archive-item__meta { display: flex; flex-direction: column; align-items: flex-end; gap: 2rpx; }
-.archive-item__time { color: $muted; font-size: 20rpx; }
-.archive-item__delete { color: #e11d48; font-size: 20rpx; }
-.archive-item__content { display: block; margin-top: $gap-md; color: $ink; font-size: $font-sm; line-height: 1.8; white-space: pre-wrap; }
-.archive-item__images { display: flex; flex-wrap: wrap; gap: 12rpx; margin-top: $gap-md; }
-.archive-item__img { width: 160rpx; height: 160rpx; border-radius: $radius-md; background: $surface; }
+.image-grid { display: flex; flex-wrap: wrap; gap: 16rpx; margin-bottom: $gap-md; }
+.image-thumb { position: relative; width: 160rpx; height: 160rpx; border-radius: $radius-sm; overflow: hidden; border: 1px solid $line;}
+.image-thumb image { width: 100%; height: 100%; }
+.image-del { position: absolute; top: 0; right: 0; width: 40rpx; height: 40rpx; background: rgba(0,0,0,0.6); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 32rpx; border-bottom-left-radius: 8rpx;}
+.image-add { width: 160rpx; height: 160rpx; display: flex; flex-direction: column; align-items: center; justify-content: center; background: $surface; border: 1px dashed $muted; border-radius: $radius-sm; color: $muted; }
+.image-add__icon { font-size: 40rpx; margin-bottom: 4rpx; }
+.image-add__text { font-size: 20rpx; }
 
-.archive-empty { display: flex; flex-direction: column; align-items: center; padding: 80rpx $gap-lg; margin-top: $gap-md; border-radius: $radius-lg; background: $paper; box-shadow: $shadow-sm; color: $muted; font-size: $font-sm; text-align: center; }
-.archive-empty__icon { margin-bottom: $gap-sm; font-size: 48rpx; }
-.archive-empty__sub { margin-top: $gap-xs; color: $muted; font-size: $font-xs; }
-.archive-loading { padding: 80rpx 0; text-align: center; color: $muted; font-size: $font-sm; }
+.submit-btn { width: 100%; }
 
-.archive-overlay { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: $gap-lg; background: rgba(39, 39, 42, .46); backdrop-filter: blur(8rpx); }
-.archive-dialog { display: flex; width: 100%; max-width: 560rpx; flex-direction: column; align-items: center; padding: $gap-xl $gap-lg $gap-lg; border-radius: $radius-lg; background: $paper; box-shadow: $shadow-lg; }
-.archive-dialog__icon { display: grid; width: 96rpx; height: 96rpx; flex: 0 0 auto; place-items: center; border-radius: 50%; background: $blush; color: $rose-dark; font-size: 56rpx; line-height: 1; }
-.archive-dialog__title { display: block; margin-top: $gap-md; color: $ink; font-size: $font-lg; font-weight: 800; text-align: center; }
-.archive-dialog__copy { display: block; margin-top: $gap-sm; color: $muted; font-size: $font-sm; line-height: 1.7; text-align: center; }
-.archive-dialog__actions { display: flex; width: 100%; gap: $gap-sm; margin-top: $gap-lg; }
-.archive-dialog__quiet, .archive-dialog__danger { flex: 1; height: 88rpx; line-height: 88rpx; border-radius: $radius-full; font-size: $font-sm; font-weight: 700; }
-.archive-dialog__quiet { background: $surface; color: $ink; }
-.archive-dialog__danger { background: #e11d48; color: #fff; }
+.section-title { font-size: $font-md; font-weight: 700; color: $ink; margin: $gap-lg 0 $gap-sm; }
+
+.record-list { display: flex; flex-direction: column; gap: $gap-md; }
+.record-card { padding: $gap-lg; }
+.record-card__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16rpx; padding-bottom: 16rpx; border-bottom: 1px solid $surface;}
+.record-author { display: flex; align-items: center; gap: 12rpx; }
+.author-badge { padding: 4rpx 12rpx; border-radius: 4rpx; font-size: 20rpx; font-weight: bold; }
+.author-badge--patient { background: $blush; color: $rose-dark; }
+.author-badge--doctor { background: #e0f2fe; color: #0284c7; }
+.author-name { font-size: $font-sm; font-weight: 700; color: $ink; }
+.record-time { font-size: 22rpx; color: $muted; }
+
+.record-content { display: block; font-size: $font-sm; color: $ink; line-height: 1.6; white-space: pre-wrap; }
+.record-images { display: flex; flex-wrap: wrap; gap: 12rpx; margin-top: $gap-md; }
+.record-image { width: 140rpx; height: 140rpx; border-radius: $radius-sm; border: 1px solid $line;}
+
+.record-card__footer { margin-top: $gap-md; text-align: right; }
+.btn-text-danger { font-size: 24rpx; color: #ef4444; font-weight: 600; padding: 8rpx; }
+
+.empty-state { padding: $gap-xl; text-align: center; background: $paper; border-radius: $radius-md; border: 1px dashed $line; color: $muted; font-size: $font-sm; }
+
+.overlay { position: fixed; inset: 0; z-index: 50; background: rgba(15, 23, 42, 0.4); display: flex; align-items: center; justify-content: center; padding: $gap-xl; }
+.dialog { width: 100%; background: $paper; border-radius: $radius-md; overflow: hidden; box-shadow: $shadow-lg; }
+.dialog-header { padding: $gap-md $gap-lg; border-bottom: 1px solid $line; background: $surface; }
+.dialog-title { font-size: $font-md; font-weight: 700; color: #ef4444; }
+.dialog-body { padding: $gap-lg; font-size: $font-sm; color: $ink; line-height: 1.6; }
+.dialog-footer { display: flex; padding: $gap-md $gap-lg; gap: $gap-md; border-top: 1px solid $line; }
+.btn-danger { background: #ef4444; color: #fff; border: none; border-radius: $radius-md; font-size: $font-md; font-weight: 500; }
+.flex-1 { flex: 1; }
 </style>

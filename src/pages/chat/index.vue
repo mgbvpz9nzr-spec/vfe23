@@ -1,9 +1,8 @@
 <template>
   <view class="page chat-page">
     <ClinicTopBar />
-    <!-- 顶部仅保留标题(去掉了原来的"AI 小美 / 姐姐的专属健康顾问"双行头部),直接进入对话 -->
     <view class="chat-titlebar">
-      <text class="chat-titlebar__name">小美 · 姐姐的健康顾问</text>
+      <text class="chat-titlebar__name">AI 辅助咨询系统</text>
     </view>
 
     <scroll-view
@@ -16,14 +15,13 @@
       :bounces="true"
     >
       <view v-if="chatStore.isLoading" class="chat-loading">
-        <text>正在加载聊天记录…</text>
+        <text>正在建立安全连接并加载记录...</text>
       </view>
 
       <view v-else-if="!chatStore.hasMessages" class="chat-welcome">
-        <text class="chat-welcome__icon">💬</text>
-        <text class="chat-welcome__title">姐姐好，我是小美</text>
+        <text class="chat-welcome__title">在线咨询辅助</text>
         <text class="chat-welcome__text">
-          小美会倾听姐姐的健康困惑。可以点击快捷提问，或直接描述今天的经期、身体感受，小美会在对话中自动生成当日专属分析报告。
+          欢迎使用AI健康咨询系统。请描述您的症状、疑惑或提供当天的体征数据，系统将进行初步的数据分析与分诊建议。
         </text>
       </view>
 
@@ -52,6 +50,27 @@
     </view>
 
     <view class="chat-input-bar">
+      <scroll-view class="quick-scroll" scroll-x :show-scrollbar="false" :enhanced="true">
+        <view class="quick-list">
+          <button
+            class="quick-button quick-button--primary"
+            :disabled="chatStore.isBusy"
+            @click="handleAnalysis"
+          >
+            <text>执行综合指征分析</text>
+          </button>
+          <button
+            v-for="item in quickQuestions"
+            :key="item.text"
+            class="quick-button"
+            :disabled="chatStore.isBusy"
+            @click="handleQuickQuestion(item.question)"
+          >
+            <text>{{ item.text }}</text>
+          </button>
+        </view>
+      </scroll-view>
+      
       <view class="chat-input-wrap">
         <textarea
           v-model="inputText"
@@ -60,7 +79,7 @@
           :maxlength="500"
           :disabled="chatStore.isBusy"
           confirm-type="send"
-          placeholder="姐姐，想问小美什么呀…"
+          placeholder="请输入症状描述或咨询问题..."
           :show-confirm-bar="false"
           :adjust-position="true"
           :hold-keyboard="true"
@@ -72,29 +91,9 @@
           :disabled="!inputText.trim() || chatStore.isBusy"
           @click="handleSend"
         >
-          {{ chatStore.isSending ? "发送中" : "发送" }}
+          {{ chatStore.isSending ? "处理中" : "发送" }}
         </button>
       </view>
-      <scroll-view class="quick-scroll" scroll-x :show-scrollbar="false" :enhanced="true">
-        <view class="quick-list">
-          <button
-            v-for="item in quickQuestions"
-            :key="item.text"
-            class="quick-button"
-            :disabled="chatStore.isBusy"
-            @click="handleQuickQuestion(item.question)"
-          >
-            <text>{{ item.icon }} {{ item.text }}</text>
-          </button>
-          <button
-            class="quick-button quick-button--primary"
-            :disabled="chatStore.isBusy"
-            @click="handleAnalysis"
-          >
-            <text>✨ 生成今日专属分析</text>
-          </button>
-        </view>
-      </scroll-view>
     </view>
   </view>
 </template>
@@ -110,10 +109,9 @@ const inputText = ref("");
 const scrollToId = ref("");
 
 const quickQuestions = [
-  { text: "周期规律", icon: "📅", question: "小美帮我看看最近的周期规律" },
-  { text: "痛经加重", icon: "😖", question: "小美，我最近为什么痛经加重？" },
-  { text: "排卵期", icon: "🥚", question: "小美，排卵期怎么算？" },
-  { text: "经期饮食", icon: "🥗", question: "小美，经期饮食需要注意什么？" },
+  { text: "评估周期规律", question: "请根据我的历史数据评估近期的周期规律。" },
+  { text: "排卵期计算", question: "请说明排卵期的临床计算方法及我的预测日期。" },
+  { text: "经期注意事项", question: "请列出经期需要注意的医学常识与生活干预建议。" },
 ];
 
 async function scrollToBottom() {
@@ -158,10 +156,8 @@ async function handleAnalysis() {
 }
 
 onMounted(() => {
-  // 加载聊天记录不阻塞页面首次渲染，加载完再尝试自动分析
   chatStore.loadMessages().then(() => {
     scrollToBottom();
-    // 若用户从周期页「问小美」进入，消息加载完后再自动生成分析
     return chatStore.runPendingAutoAnalysis();
   }).then(() => scrollToBottom());
 });
@@ -182,21 +178,16 @@ onShow(restorePendingPrompt);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 18rpx $gap-lg;
+  padding: 20rpx $gap-lg;
   background: $paper;
   border-bottom: 1px solid $line;
-
-  &__name {
-    font-size: $font-md;
-    font-weight: 800;
-    color: $ink;
-  }
 }
+.chat-titlebar__name { font-size: $font-md; font-weight: 700; color: $ink; }
 
 .chat-messages {
   flex: 1;
   min-height: 0;
-  padding: $gap-md $gap-md $gap-sm;
+  padding: $gap-md;
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -217,150 +208,141 @@ onShow(restorePendingPrompt);
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: #71717a;
+  color: $muted;
   text-align: center;
 }
 
-.chat-loading { padding-top: 180rpx; }
+.chat-loading { padding-top: 80rpx; font-size: 24rpx;}
 
 .chat-welcome {
-  padding: 72rpx 20rpx 40rpx;
-
-  &__icon { margin-bottom:16rpx;font-size:80rpx; }
-  &__title { margin-bottom: 10rpx; color: $ink; font-size: $font-lg; font-weight: 800; }
-  &__text { max-width: 590rpx; font-size: $font-sm; line-height: 1.7; }
+  padding: 60rpx 40rpx;
+  background: $paper;
+  border: 1px solid $line;
+  border-radius: $radius-md;
+  margin: $gap-lg 0;
 }
+.chat-welcome__title { margin-bottom: 16rpx; color: $ink; font-size: $font-lg; font-weight: 700; }
+.chat-welcome__text { font-size: $font-sm; line-height: 1.6; color: $muted;}
 
 .quick-scroll {
   width: 100%;
-  margin-top: 12rpx;
+  margin-bottom: 16rpx;
   white-space: nowrap;
   overflow: hidden;
 }
 
 .quick-list {
   display: inline-flex;
-  gap: 10rpx;
-  padding-right: 10rpx;
+  gap: 16rpx;
 }
 
 .quick-button {
   display: inline-flex;
-  flex: 0 0 auto;
   align-items: center;
-  justify-content: center;
-  gap: 6rpx;
-  height: 52rpx;
+  height: 56rpx;
   margin: 0;
-  padding: 0 18rpx;
-  border: 1px solid rgba(236, 72, 153, 0.18);
-  border-radius: $radius-full;
+  padding: 0 24rpx;
+  border: 1px solid $line;
+  border-radius: $radius-sm;
   background: $paper;
-  color: #52525b;
-  font-size: 22rpx;
-  line-height: 52rpx;
-  white-space: nowrap;
+  color: $ink;
+  font-size: 24rpx;
+  line-height: 54rpx;
 
   &::after { border: 0; }
   &[disabled] { opacity: 0.5; }
 
   &--primary {
-    background: linear-gradient(135deg, $rose, $rose-dark);
+    background: $rose-dark;
     color: #fff;
-    font-weight: 700;
-    box-shadow: 0 4rpx 12rpx rgba(236, 72, 153, .18);
-    border-color: transparent;
+    border-color: $rose-dark;
+    font-weight: 600;
   }
 }
 
 .chat-bubble {
   display: inline-block;
-  max-width: min(560rpx, 78%);
-  padding: 18rpx 22rpx;
-  border-radius: $radius-lg;
-  font-size: $font-md;
-  line-height: 1.7;
+  max-width: 85%;
+  padding: 20rpx 24rpx;
+  border-radius: $radius-md;
+  font-size: 28rpx;
+  line-height: 1.6;
   word-break: break-word;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   box-sizing: border-box;
 
   &--user {
-    background: linear-gradient(135deg, $rose, $rose-dark);
+    background: $rose-dark;
     color: #fff;
-    border-radius: $radius-lg $radius-sm $radius-lg $radius-lg;
+    border-bottom-right-radius: 4rpx;
   }
 
   &--assistant {
     background: $paper;
     color: $ink;
-    border-radius: $radius-sm $radius-lg $radius-lg $radius-lg;
+    border: 1px solid $line;
+    border-bottom-left-radius: 4rpx;
     box-shadow: $shadow-sm;
   }
 
-  &--pending { color: #71717a; }
+  &--pending { opacity: 0.7; }
   &__text {
     display: block;
     width: 100%;
-    word-break: break-word;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
   }
 }
 
-.chat-bottom-anchor { height: 2rpx; }
+.chat-bottom-anchor { height: 1px; }
 
 .chat-error {
-  padding: 8rpx $gap-lg;
-  background: #fff1f2;
-  color: #be123c;
+  padding: 12rpx $gap-md;
+  background: #fef2f2;
+  color: #b91c1c;
   font-size: $font-xs;
   text-align: center;
+  border-top: 1px solid #fecaca;
 }
 
 .chat-input-bar {
-  padding: 14rpx $gap-md calc(14rpx + env(safe-area-inset-bottom));
-  background: $paper;
+  padding: 20rpx $gap-md calc(20rpx + env(safe-area-inset-bottom));
+  background: $surface;
   border-top: 1px solid $line;
 }
 
 .chat-input-wrap {
   display: flex;
   align-items: flex-end;
-  gap: 12rpx;
+  gap: 16rpx;
 }
 
 .chat-input {
   flex: 1;
-  min-height: 68rpx;
-  max-height: 220rpx;
-  padding: 16rpx 20rpx;
-  background: $surface;
-  border: 1px solid rgba(236, 72, 153, 0.12);
-  border-radius: $radius-md;
-  font-size: $font-md;
-  line-height: 1.5;
+  min-height: 80rpx;
+  max-height: 240rpx;
+  padding: 20rpx 24rpx;
+  background: $paper;
+  border: 1px solid $line;
+  border-radius: $radius-sm;
+  font-size: 28rpx;
   box-sizing: border-box;
-  word-break: break-word;
 }
+.chat-input:focus { border-color: $rose-dark; }
 
 .send-button {
   flex: 0 0 auto;
-  align-self: flex-end;
-  width: 120rpx;
-  height: 68rpx;
+  height: 80rpx;
   margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: $radius-md;
-  font-size: 24rpx;
-  font-weight: 700;
-  line-height: 68rpx;
-  background: linear-gradient(135deg, $rose, $rose-dark);
+  padding: 0 32rpx;
+  border-radius: $radius-sm;
+  font-size: 26rpx;
+  font-weight: 600;
+  line-height: 80rpx;
+  background: $rose-dark;
   color: #fff;
-  text-align: center;
+  border: none;
 
   &::after { border: 0; }
-  &[disabled] { opacity: 0.48; }
+  &[disabled] { background: #cbd5e1; color: #f8fafc; }
 }
 </style>

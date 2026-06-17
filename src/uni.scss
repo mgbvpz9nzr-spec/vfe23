@@ -1,34 +1,36 @@
-/* 设计系统 — 移植自患者端 Web 版 */
+/* 设计系统 — 医疗临床专业版 */
 /* 颜色变量 */
-$ink: #303039;
-$muted: #9898a3;
-$rose: #f472b6;
-$rose-dark: #ec4899;
-$blush: #fdf2f8;
-$paper: #ffffff;
-$surface: #fff9fc;
-$line: rgba(236, 72, 153, 0.1);
-$ai-msg: #d97aa6;
-$shadow-sm: 0 8rpx 24rpx rgba(177, 68, 124, 0.07);
-$shadow-md: 0 14rpx 38rpx rgba(177, 68, 124, 0.1);
-$shadow-lg: 0 22rpx 60rpx rgba(177, 68, 124, 0.14);
+$ink: #0f172a; /* Slate 900 - 正文极黑 */
+$muted: #64748b; /* Slate 500 - 辅助文字 */
+$rose: #0ea5e9; /* 主色：专业蓝 (保留变量名以兼容旧代码逻辑) */
+$rose-dark: #0284c7; /* 深主色 */
+$blush: #f0f9ff; /* 极浅主色：用于背景高亮 */
+$paper: #ffffff; /* 卡片背景 */
+$surface: #f1f5f9; /* Slate 100 - 全局底层背景 */
+$line: #e2e8f0; /* Slate 200 - 边框与分割线 */
+$ai-msg: #0284c7;
 
-/* 间距 */
+/* 阴影 - 更轻量、紧凑的阴影风格 */
+$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+
+/* 间距 - 规律化 */
 $gap-xs: 8rpx;
-$gap-sm: 12rpx;
-$gap-md: 16rpx;
-$gap-lg: 24rpx;
-$gap-xl: 32rpx;
+$gap-sm: 16rpx;
+$gap-md: 24rpx;
+$gap-lg: 32rpx;
+$gap-xl: 40rpx;
 
-/* 圆角 */
-$radius-sm: 12rpx;
-$radius-md: 20rpx;
-$radius-lg: 32rpx;
+/* 圆角 - 偏向正式的矩形圆角 */
+$radius-sm: 6rpx;
+$radius-md: 12rpx;
+$radius-lg: 16rpx;
 $radius-full: 999rpx;
 
 /* 字体 */
 $font-xs: 22rpx;
-$font-sm: 24rpx;
+$font-sm: 26rpx;
 $font-md: 28rpx;
 $font-lg: 32rpx;
 $font-xl: 36rpx;
@@ -36,8 +38,7 @@ $font-2xl: 44rpx;
 
 /* 全局重置 */
 page {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: $font-md;
   color: $ink;
   background-color: $surface;
@@ -48,57 +49,57 @@ view {
   box-sizing: border-box;
 }
 
-/* 通用按钮 */
+/* 通用按钮 - 医疗标准样式 */
 .btn-primary {
-  background: linear-gradient(135deg, $rose, $rose-dark);
+  background: $rose-dark;
   color: #fff;
   border: none;
   border-radius: $radius-md;
-  padding: 24rpx 40rpx;
+  padding: 20rpx 40rpx;
   font-size: $font-md;
-  font-weight: 700;
+  font-weight: 500;
   text-align: center;
+  box-shadow: $shadow-sm;
+}
+.btn-primary[disabled] {
+  background: #cbd5e1;
+  color: #f8fafc;
+  box-shadow: none;
 }
 
 .btn-secondary {
-  background: $blush;
-  color: $rose-dark;
-  border: 1px solid $line;
-  border-radius: $radius-md;
-  padding: 24rpx 40rpx;
-  font-size: $font-md;
-  font-weight: 600;
-  text-align: center;
-}
-
-.btn-outline {
   background: $paper;
   color: $ink;
   border: 1px solid $line;
   border-radius: $radius-md;
-  padding: 24rpx 40rpx;
+  padding: 20rpx 40rpx;
+  font-size: $font-md;
+  font-weight: 500;
+  text-align: center;
+}
+
+.btn-outline {
+  background: transparent;
+  color: $rose-dark;
+  border: 1px solid $rose-dark;
+  border-radius: $radius-md;
+  padding: 20rpx 40rpx;
   font-size: $font-md;
   text-align: center;
 }
 
-/* 卡片 */
+/* 卡片 - 清爽的边界和微阴影 */
 .card {
   background: $paper;
-  border-radius: $radius-lg;
+  border-radius: $radius-md;
   padding: $gap-lg;
   box-shadow: $shadow-sm;
-  border: 1rpx solid rgba(236, 72, 153, 0.035);
+  border: 1px solid $line;
 }
 
-/* 文本 */
-.text-muted {
-  color: $muted;
-  font-size: $font-sm;
-}
-
-.text-rose {
-  color: $rose-dark;
-}
+/* 文本辅助 */
+.text-muted { color: $muted; font-size: $font-sm; }
+.text-rose { color: $rose-dark; font-weight: 500; }
 
 /* 间距工具 */
 .mt-sm { margin-top: $gap-sm; }

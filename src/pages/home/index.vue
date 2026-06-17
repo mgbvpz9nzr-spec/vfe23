@@ -1,102 +1,113 @@
 <template>
   <view class="page home-page">
     <ClinicTopBar />
-    <!-- 用户问候 -->
+    
     <view class="home-hero">
       <view class="home-hero__greeting">
-        <text class="home-hero__wave">👋</text>
-        <text class="home-hero__name">你好，{{ userStore.displayName || '姐姐' }}</text>
+        <text class="home-hero__name">{{ userStore.displayName || '医师 / 患者' }} 工作台</text>
       </view>
       <text class="home-hero__date">{{ todayStr }}</text>
     </view>
 
-    <view class="today-card">
-      <view class="today-card__head">
-        <text class="today-card__title">今日速览</text>
-        <text class="today-card__date">
-          {{ todayStr }} ·
-          <text v-if="totalRecordedDays > 0" class="today-card__streak">已记录 {{ totalRecordedDays }} 天</text>
-          <text v-else class="today-card__streak today-card__streak--empty">还没有记录哦</text>
+    <!-- 临床健康数据仪表盘 -->
+    <view class="dashboard-module card">
+      <view class="module-header">
+        <text class="module-title">今日指征数据采集</text>
+        <text class="module-meta">
+          <text v-if="totalRecordedDays > 0" class="text-rose">已连续跟踪 {{ totalRecordedDays }} 天</text>
+          <text v-else class="text-muted">暂无跟踪数据</text>
         </text>
       </view>
 
-      <!-- 已记录 / 待补充 两栏：已记录显示勾选,待补充可点击直接补录 -->
-      <view class="today-rows">
-        <view class="today-row today-row--done">
-          <text class="today-row__label">已记录</text>
-          <view class="today-row__chips">
-            <view v-for="item in doneChips" :key="item.key" class="today-chip today-chip--done">
-              <text>{{ item.icon }} {{ item.label }}</text>
+      <view class="task-sections">
+        <!-- 已归档数据 -->
+        <view class="task-section">
+          <view class="task-section__head">
+            <text class="task-section__label">已归档记录</text>
+          </view>
+          <view class="task-chips">
+            <view v-for="item in doneChips" :key="item.key" class="task-chip task-chip--done">
+              <text class="task-chip__text">{{ item.label }}</text>
             </view>
-            <text v-if="!doneChips.length" class="today-row__empty">今天还没记录任何内容</text>
+            <text v-if="!doneChips.length" class="task-empty">尚未提交今日数据</text>
           </view>
         </view>
-        <view class="today-row today-row--todo">
-          <text class="today-row__label">点击补充</text>
-          <view class="today-row__chips">
+        
+        <!-- 待采数据 -->
+        <view class="task-section">
+          <view class="task-section__head">
+            <text class="task-section__label text-rose">待采集项</text>
+          </view>
+          <view class="task-chips">
             <view
               v-for="item in todoChips"
               :key="item.key"
-              class="today-chip today-chip--todo"
-              :class="{ 'today-chip--primary': item.primary }"
-              hover-class="today-chip--pressed"
+              class="task-chip task-chip--todo"
+              :class="{ 'task-chip--primary': item.primary }"
+              hover-class="task-chip--pressed"
               :hover-stay-time="120"
               @click="openQuickRecord(item)"
             >
-              <text>{{ item.icon }} {{ item.label }}</text>
+              <text class="task-chip__icon">+</text>
+              <text class="task-chip__text">{{ item.label }}</text>
             </view>
-            <text v-if="!todoChips.length" class="today-row__empty">今日重点都已记录,辛苦啦～</text>
+            <text v-if="!todoChips.length" class="task-empty">所有关键指征已完成采集</text>
           </view>
         </view>
       </view>
     </view>
 
-    <!-- 快速入口 -->
+    <!-- 快捷功能矩阵 -->
     <view class="home-grid">
-      <view class="home-grid__item" @click="goTab('period')">
-        <text class="home-grid__icon">🌸</text>
-        <text class="home-grid__title">周期记录</text>
-        <text class="home-grid__desc">更懂你的规律</text>
+      <view class="home-grid__item card" @click="goTab('period')">
+        <view class="home-grid__icon">📅</view>
+        <text class="home-grid__title">周期追踪</text>
+        <text class="home-grid__desc">规律数据分析</text>
       </view>
-      <view class="home-grid__item" @click="goSelfCheck">
-        <text class="home-grid__icon">🩺</text>
-        <text class="home-grid__title">症状自查</text>
-        <text class="home-grid__desc">AI 整理就诊建议</text>
+      <view class="home-grid__item card" @click="goSelfCheck">
+        <view class="home-grid__icon">📋</view>
+        <text class="home-grid__title">症状评估</text>
+        <text class="home-grid__desc">AI辅助分诊</text>
       </view>
-      <view class="home-grid__item" @click="goTab('chat')">
-        <text class="home-grid__icon">💬</text>
-        <text class="home-grid__title">小美顾问</text>
-        <text class="home-grid__desc">专属 AI 健康建议</text>
-      </view>
-    </view>
-
-    <!-- 预约卡片 -->
-    <view class="home-booking-card" @click="goPage('booking')">
-      <view class="home-booking-card__info">
-        <text class="home-booking-card__title">需要医生帮忙吗？</text>
-        <text class="home-booking-card__desc">预约基础咨询或门店服务</text>
-      </view>
-      <view class="home-booking-card__action">
-        <text>现在预约</text>
+      <view class="home-grid__item card" @click="goTab('chat')">
+        <view class="home-grid__icon">💬</view>
+        <text class="home-grid__title">智能咨询</text>
+        <text class="home-grid__desc">全天候健康解答</text>
       </view>
     </view>
 
-    <view v-if="marketingPosts.length" class="home-section-title">门诊关怀与消息</view>
-    <view v-for="post in marketingPosts.slice(0, 3)" :key="post.id" class="marketing-card card" @click="openMarketing(post)">
-      <view><text class="marketing-card__tag">{{ post.type === "PROMOTION" ? "关怀" : post.type === "ACTIVITY" ? "活动" : "消息" }}</text><text class="marketing-card__title">{{ post.title }}</text><text class="marketing-card__copy">{{ post.subtitle || post.activityInfo || post.introText || "" }}</text></view><text>查看</text>
+    <!-- 挂号/服务卡片 -->
+    <view class="action-card card" @click="goPage('booking')">
+      <view class="action-card__info">
+        <text class="action-card__title">门诊挂号与服务预约</text>
+        <text class="action-card__desc">快速预约复诊或线下检查项目</text>
+      </view>
+      <button class="btn-primary action-card__btn">立刻预约</button>
+    </view>
+
+    <view v-if="marketingPosts.length" class="section-title">诊所公告与随访计划</view>
+    <view v-for="post in marketingPosts.slice(0, 3)" :key="post.id" class="notice-card card" @click="openMarketing(post)">
+      <view class="notice-card__content">
+        <text class="notice-card__tag">{{ post.type === "PROMOTION" ? "随访" : post.type === "ACTIVITY" ? "宣教" : "通知" }}</text>
+        <text class="notice-card__title">{{ post.title }}</text>
+        <text class="notice-card__copy">{{ post.subtitle || post.activityInfo || post.introText || "" }}</text>
+      </view>
+      <text class="notice-card__arrow">›</text>
     </view>
 
     <!-- 加载 -->
-    <view v-if="loading" class="home-loading">
-      <text>加载中...</text>
+    <view v-if="loading" class="loading-state">
+      <text>同步数据中...</text>
     </view>
 
-    <!-- 快捷记录弹窗(复用周期页 ChoiceSection + 同款选项) -->
-    <view v-if="periodStore.activeSheet && periodStore.activeSheet !== 'stateSwitch' && periodStore.activeSheet !== 'modeSettings' && periodStore.activeSheet !== 'dayDetail' && periodStore.activeSheet !== 'startConfirm' && periodStore.activeSheet !== 'endConfirm'" class="marketing-backdrop" @click="closeHomeSheet">
-      <view class="quick-sheet" @click.stop>
-        <view class="quick-sheet__handle" />
-        <text class="quick-sheet__title">{{ homeSheetTitle }}</text>
-        <scroll-view class="quick-sheet__body" scroll-y>
+    <!-- 快捷记录弹窗 -->
+    <view v-if="periodStore.activeSheet && periodStore.activeSheet !== 'stateSwitch' && periodStore.activeSheet !== 'modeSettings' && periodStore.activeSheet !== 'dayDetail' && periodStore.activeSheet !== 'startConfirm' && periodStore.activeSheet !== 'endConfirm'" class="overlay" @click="closeHomeSheet">
+      <view class="sheet-dialog" @click.stop>
+        <view class="sheet-dialog__header">
+          <text class="sheet-dialog__title">{{ homeSheetTitle }}</text>
+          <text class="sheet-dialog__close" @click="closeHomeSheet">×</text>
+        </view>
+        <scroll-view class="sheet-dialog__body" scroll-y>
           <ChoiceSection
             v-for="f in homeSheetFields"
             :key="f.key"
@@ -110,29 +121,38 @@
           />
           <template v-if="periodStore.activeSheet === 'weight'">
             <view class="form-section">
-              <text class="form-section__title">体重 (kg)</text>
-              <input v-model="form.weight" type="digit" class="form-input" placeholder="输入体重" />
+              <text class="form-section__title">体重数据 (kg)</text>
+              <input v-model="form.weight" type="digit" class="form-input" placeholder="请输入精确数值" />
             </view>
           </template>
           <template v-if="periodStore.activeSheet === 'bodyTemp'">
             <view class="form-section">
               <text class="form-section__title">基础体温 (℃)</text>
-              <input v-model="form.bodyTemp" type="digit" class="form-input" placeholder="输入体温" />
+              <input v-model="form.bodyTemp" type="digit" class="form-input" placeholder="请输入精确数值" />
             </view>
           </template>
         </scroll-view>
-        <button class="btn-primary quick-sheet__btn" :loading="saving" @click="saveHomeSheet">保存</button>
+        <view class="sheet-dialog__footer">
+          <button class="btn-primary sheet-dialog__btn" :loading="saving" @click="saveHomeSheet">确认保存</button>
+        </view>
       </view>
     </view>
 
-    <view v-if="activeMarketing" class="marketing-backdrop" @click="activeMarketing = null">
-      <view class="marketing-sheet" @click.stop>
-        <view class="marketing-sheet__handle" />
-        <text class="marketing-sheet__tag">{{ activeMarketing.type === "PROMOTION" ? "关怀" : activeMarketing.type === "ACTIVITY" ? "活动" : "消息" }}</text>
-        <text class="marketing-sheet__title">{{ activeMarketing.title || "门诊消息" }}</text>
-        <text class="marketing-sheet__summary">{{ activeMarketing.subtitle || activeMarketing.introText || "" }}</text>
-        <scroll-view class="marketing-sheet__copy" scroll-y><text>{{ activeMarketing.bodyText || activeMarketing.activityInfo || activeMarketing.introText || activeMarketing.subtitle || "暂无详细内容" }}</text></scroll-view>
-        <button class="marketing-sheet__button" @click="activeMarketing = null">我知道了</button>
+    <!-- 公告弹窗 -->
+    <view v-if="activeMarketing" class="overlay" @click="activeMarketing = null">
+      <view class="sheet-dialog" @click.stop>
+        <view class="sheet-dialog__header">
+          <text class="sheet-dialog__tag">{{ activeMarketing.type === "PROMOTION" ? "随访" : activeMarketing.type === "ACTIVITY" ? "宣教" : "通知" }}</text>
+          <text class="sheet-dialog__close" @click="activeMarketing = null">×</text>
+        </view>
+        <view class="sheet-dialog__body">
+          <text class="sheet-dialog__title">{{ activeMarketing.title || "门诊消息" }}</text>
+          <text class="sheet-dialog__summary">{{ activeMarketing.subtitle || activeMarketing.introText || "" }}</text>
+          <scroll-view class="sheet-dialog__scroll" scroll-y><text class="sheet-dialog__text">{{ activeMarketing.bodyText || activeMarketing.activityInfo || activeMarketing.introText || activeMarketing.subtitle || "暂无详细内容" }}</text></scroll-view>
+        </view>
+        <view class="sheet-dialog__footer">
+          <button class="btn-primary sheet-dialog__btn" @click="activeMarketing = null">关闭</button>
+        </view>
       </view>
     </view>
   </view>
@@ -157,7 +177,7 @@ const loading = ref(false);
 const activeMarketing = ref<any | null>(null);
 const form = reactive<Record<string, any>>({});
 const marketingPosts = computed<any[]>(() => appStore.dashboard?.marketingPosts ?? []);
-// 用户总计记录过的天数(records + symptomLogs 日期去重,不要求连续)
+
 const totalRecordedDays = computed(() => {
   const dateSet = new Set<string>();
   for (const r of periodStore.records) {
@@ -171,7 +191,6 @@ const totalRecordedDays = computed(() => {
   return dateSet.size;
 });
 
-// 枚举值→中文 label;DB 存的是英文,首页展示时统一转中文
 const moodLabels: Record<string, string> = {
   happy: "开心", calm: "平静", tired: "疲倦",
   anxious: "焦虑", blue: "低落", angry: "烦躁",
@@ -189,13 +208,11 @@ function labelOf(map: Record<string, string>, value: unknown) {
 
 const todayStr = computed(() => {
   const d = new Date();
-  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 });
 
-// 当前用户模式
 const currentMode = computed<Mode>(() => (periodStore.menstrualState?.mode || "PERIOD") as Mode);
 
-// 今日是否有进行中的经期(startConfirm 或经期体感，不限开始日期)
 const ongoingPeriod = computed(() => periodStore.records.find((record: any) => {
   if (record.endDate) return false;
   const d = String(record.recordDate || record.startDate).slice(0, 10);
@@ -214,7 +231,6 @@ const ongoingPeriod = computed(() => periodStore.records.find((record: any) => {
   return isStartRecord || hasSymptoms;
 }));
 
-// 是否在排卵 / 易孕窗口
 const inFertile = computed(() => {
   const pred = periodStore.cyclePrediction;
   if (!pred?.fertileWindow) return false;
@@ -229,24 +245,21 @@ const todayRecord = computed<any>(() => {
 
 const todaySymptomCount = computed(() => periodStore.symptomLogs.filter((log: any) => String(log.occurredAt).slice(0, 10) === isoToday()).length);
 
-// 已记录 chip：按当前模式下当日 record 中已填写的字段
 const doneChips = computed(() => {
   const r: any = todayRecord.value ?? {};
   const out: { key: string; icon: string; label: string }[] = [];
-  if (r.sleepQuality || r.sleepStart) out.push({ key: "sleep", icon: "😴", label: "睡眠" });
-  if (r.mood) out.push({ key: "mood", icon: "😊", label: `心情·${labelOf(moodLabels, r.mood)}` });
-  if (Array.isArray(r.habits) && r.habits.length) out.push({ key: "habits", icon: "🏃", label: `习惯·${r.habits.length}项` });
-  if (currentMode.value === "MOM" && r.babyFeed) out.push({ key: "babyFeed", icon: "🍼", label: `宝宝·${r.babyFeed}` });
-  if (r.weight) out.push({ key: "weight", icon: "⚖️", label: `体重·${r.weight}kg` });
-  if (r.bodyTemp) out.push({ key: "bodyTemp", icon: "🌡️", label: `体温·${r.bodyTemp}℃` });
-  if (r.ovuTestResult) out.push({ key: "ovuTest", icon: "🔬", label: `排卵·${labelOf(ovuLabels, r.ovuTestResult)}` });
-  if (r.pregTestResult) out.push({ key: "pregTest", icon: "🤰", label: `早孕·${labelOf(pregLabels, r.pregTestResult)}` });
-  if (todaySymptomCount.value) out.push({ key: "symptom", icon: "📝", label: `症状·${todaySymptomCount.value}条` });
+  if (r.sleepQuality || r.sleepStart) out.push({ key: "sleep", icon: "😴", label: "睡眠数据" });
+  if (r.mood) out.push({ key: "mood", icon: "😊", label: `心情: ${labelOf(moodLabels, r.mood)}` });
+  if (Array.isArray(r.habits) && r.habits.length) out.push({ key: "habits", icon: "🏃", label: `生活打卡: ${r.habits.length}项` });
+  if (currentMode.value === "MOM" && r.babyFeed) out.push({ key: "babyFeed", icon: "🍼", label: `育儿数据` });
+  if (r.weight) out.push({ key: "weight", icon: "⚖️", label: `体重: ${r.weight}kg` });
+  if (r.bodyTemp) out.push({ key: "bodyTemp", icon: "🌡️", label: `体温: ${r.bodyTemp}℃` });
+  if (r.ovuTestResult) out.push({ key: "ovuTest", icon: "🔬", label: `排卵: ${labelOf(ovuLabels, r.ovuTestResult)}` });
+  if (r.pregTestResult) out.push({ key: "pregTest", icon: "🤰", label: `早孕: ${labelOf(pregLabels, r.pregTestResult)}` });
+  if (todaySymptomCount.value) out.push({ key: "symptom", icon: "📝", label: `症状表现: ${todaySymptomCount.value}项` });
   return out;
 });
 
-// 待补充 chip：通用 + 模式特色,与周期数据关联(易孕/经期/排卵)
-// 怀孕模式不展示经期相关项
 const todoChips = computed(() => {
   const r: any = todayRecord.value ?? {};
   const out: { key: TodoKey; icon: string; label: string; primary?: boolean }[] = [];
@@ -254,36 +267,30 @@ const todoChips = computed(() => {
     if (cond) out.push({ key, icon, label, primary });
   };
 
-  // 通用：所有模式都建议记录心情和症状
-  pushIf("mood", "😊", "记心情", !r.mood, true);
-  pushIf("symptom", "📝", "记症状", todaySymptomCount.value === 0);
+  pushIf("mood", "😊", "记录心情状态", !r.mood, true);
+  pushIf("symptom", "📝", "记录今日症状", todaySymptomCount.value === 0);
 
   if (currentMode.value !== "PREGNANT") {
-    // 经期 / 备孕 / 宝妈：通用
-    pushIf("sleep", "😴", "记睡眠", !r.sleepQuality && !r.sleepStart);
-    pushIf("habits", "🏃", "打卡习惯", !Array.isArray(r.habits) || r.habits.length === 0);
+    pushIf("sleep", "😴", "记录睡眠情况", !r.sleepQuality && !r.sleepStart);
+    pushIf("habits", "🏃", "日常行为打卡", !Array.isArray(r.habits) || r.habits.length === 0);
   }
 
   if (currentMode.value === "MOM") {
-    // 宝妈：宝宝成长日记
-    pushIf("babyFeed", "🍼", "记宝宝", !r.babyFeed && !r.babyCry, true);
+    pushIf("babyFeed", "🍼", "婴儿成长数据", !r.babyFeed && !r.babyCry, true);
   } else if (currentMode.value === "PREGNANT") {
-    // 怀孕：体重 + 症状
-    pushIf("weight", "⚖️", "记体重", !r.weight);
+    pushIf("weight", "⚖️", "测量体重", !r.weight);
   } else if (currentMode.value === "PREPARE") {
-    // 备孕：易孕窗口提示基础体温 / 排卵试纸;经期则提示经期体感
     if (inFertile.value) {
-      pushIf("bodyTemp", "🌡️", "基础体温", !r.bodyTemp, true);
-      pushIf("ovuTest", "🔬", "排卵试纸", !r.ovuTestResult);
+      pushIf("bodyTemp", "🌡️", "录入基础体温", !r.bodyTemp, true);
+      pushIf("ovuTest", "🔬", "排卵试纸结果", !r.ovuTestResult);
     } else {
-      pushIf("intercourse", "💕", "甜蜜时刻", !r.intercourse);
+      pushIf("intercourse", "💕", "性生活记录", !r.intercourse);
     }
   } else {
-    // PERIOD 模式
     if (ongoingPeriod.value) {
-      pushIf("period", "🩹", "经期体感", !(r.painLevel || r.flowLevel), true);
+      pushIf("period", "🩹", "经期指征评估", !(r.painLevel || r.flowLevel), true);
     } else {
-      pushIf("leucorrhea", "💧", "白带观察", !(r.leuColor || r.whiteLeucorrhea));
+      pushIf("leucorrhea", "💧", "白带性状观察", !(r.leuColor || r.whiteLeucorrhea));
     }
   }
 
@@ -295,25 +302,12 @@ function isoToday() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function goTab(tab: string) {
-  uni.switchTab({ url: `/pages/${tab}/index` });
-}
+function goTab(tab: string) { uni.switchTab({ url: `/pages/${tab}/index` }); }
+function goPage(page: string) { uni.navigateTo({ url: `/pages/${page}/index` }); }
+function goSelfCheck() { uni.navigateTo({ url: "/pages/services/index?type=selfcheck" }); }
+function openMarketing(post: any) { activeMarketing.value = post; }
 
-function goPage(page: string) {
-  uni.navigateTo({ url: `/pages/${page}/index` });
-}
-
-function goSelfCheck() {
-  uni.navigateTo({ url: "/pages/services/index?type=selfcheck" });
-}
-
-function openMarketing(post: any) {
-  activeMarketing.value = post;
-}
-
-// 快捷记录(复用 periodStore.openSheet + ChoiceSection,字段与周期页一致)
 type Option = { value: string | number; label: string; icon?: string };
-
 function opt(list: string[]): Option[] { return list.map((v) => ({ value: v, label: v })); }
 
 const sheetMoodOptions: Option[] = [
@@ -352,46 +346,45 @@ const sheetIntercourseOptions: Option[] = [{ value: "yes", label: "有" }, { val
 const sheetCocOptions: Option[] = [{ value: "condom", label: "避孕套" }, { value: "emergency", label: "紧急避孕药" }, { value: "short_term", label: "短效避孕药" }, { value: "none", label: "没有" }];
 const sheetHabitsOptions: Option[] = opt(["多喝水", "吃水果", "清淡饮食", "补充蛋白", "规律运动", "散步", "早睡", "午休", "热敷", "泡脚", "放松冥想", "不喝冰饮"]);
 const sheetSymptomsOptions: Option[] = opt(["腹胀", "腹痛", "腰酸", "头痛", "头晕", "乏力", "乳房胀痛", "恶心", "腹泻", "便秘", "长痘", "浮肿"]);
-const sheetBabyFeedOptions: Option[] = opt(["香甜母乳", "营养配方奶", "混合喂养", "尝了辅食"]);
-const sheetBabyCryOptions: Option[] = opt(["乖乖没哭", "哼唧了一小下", "大哭了一场", "闹腾好久"]);
-const sheetDietOptions: Option[] = opt(["叶酸打卡", "复合维他命", "吃钙片", "补铁啦", "高蛋白", "绿叶菜", "鲜水果", "全谷物", "小坚果", "戒了冷饮", "今天没喝咖啡", "远离酒精", "远离二手烟"]);
+const sheetBabyFeedOptions: Option[] = opt(["母乳", "配方奶", "混合喂养", "辅食"]);
+const sheetBabyCryOptions: Option[] = opt(["正常状态", "轻微哭闹", "剧烈哭闹", "持续烦躁"]);
+const sheetDietOptions: Option[] = opt(["叶酸", "复合维他命", "钙片", "铁剂", "高蛋白", "绿叶菜", "鲜水果", "全谷物", "坚果", "忌冷饮", "无咖啡", "无酒精", "无二手烟"]);
 
 interface SheetField { key: string; label: string; options: Option[]; multi?: boolean; visual?: string }
 const sheetFieldsMap: Record<string, SheetField[]> = {
-  sleep: [{ key: "sleepQuality", label: "睡眠质量", options: sheetSleepOptions }],
-  notes: [{ key: "mood", label: "今天心情", options: sheetMoodOptions }],
+  sleep: [{ key: "sleepQuality", label: "睡眠质量评估", options: sheetSleepOptions }],
+  notes: [{ key: "mood", label: "心理状态评估", options: sheetMoodOptions }],
   discomfort: [
-    { key: "painLevel", label: "疼痛程度", options: sheetPainOptions },
-    { key: "flowLevel", label: "经血流量", options: sheetFlowOptions },
-    { key: "discomfort", label: "经期不适", options: sheetDiscomfortOptions },
+    { key: "painLevel", label: "疼痛等级", options: sheetPainOptions },
+    { key: "flowLevel", label: "经血流量评估", options: sheetFlowOptions },
+    { key: "discomfort", label: "伴随症状", options: sheetDiscomfortOptions },
   ],
-  habits: [{ key: "habitsArr", label: "好习惯打卡", options: sheetHabitsOptions, multi: true }],
-  symptoms: [{ key: "symptomsArr", label: "身体症状", options: sheetSymptomsOptions, multi: true }],
-  intercourse: [{ key: "intercourse", label: "今天同房", options: sheetIntercourseOptions }],
+  habits: [{ key: "habitsArr", label: "生活方式干预执行", options: sheetHabitsOptions, multi: true }],
+  symptoms: [{ key: "symptomsArr", label: "体征监测", options: sheetSymptomsOptions, multi: true }],
+  intercourse: [{ key: "intercourse", label: "性生活记录", options: sheetIntercourseOptions }],
   leucorrhea: [
-    { key: "leuColor", label: "白带颜色", options: sheetLeuColorOptions },
-    { key: "leuState", label: "状态", options: sheetLeuStateOptions },
-    { key: "leuOther", label: "其他感受", options: sheetLeuOtherOptions },
+    { key: "leuColor", label: "分泌物颜色", options: sheetLeuColorOptions },
+    { key: "leuState", label: "分泌物性状", options: sheetLeuStateOptions },
+    { key: "leuOther", label: "其他伴随症状", options: sheetLeuOtherOptions },
   ],
-  coc: [{ key: "coc", label: "避孕方式", options: sheetCocOptions }],
-  ovuTest: [{ key: "ovuTestResult", label: "排卵试纸", options: sheetOvuOptions }],
-  pregTest: [{ key: "pregTestResult", label: "早孕试纸", options: sheetPregOptions }],
+  coc: [{ key: "coc", label: "避孕措施", options: sheetCocOptions }],
+  ovuTest: [{ key: "ovuTestResult", label: "排卵监测结果", options: sheetOvuOptions }],
+  pregTest: [{ key: "pregTestResult", label: "HCG检测结果", options: sheetPregOptions }],
   babyRecord: [
-    { key: "babyFeed", label: "今天吃了什么", options: sheetBabyFeedOptions },
-    { key: "babyCry", label: "今天哭闹", options: sheetBabyCryOptions },
+    { key: "babyFeed", label: "喂养情况", options: sheetBabyFeedOptions },
+    { key: "babyCry", label: "情绪及啼哭评估", options: sheetBabyCryOptions },
   ],
-  prepareDiet: [{ key: "dietTags", label: "饮食打卡", options: sheetDietOptions, multi: true }],
+  prepareDiet: [{ key: "dietTags", label: "营养补充与饮食管理", options: sheetDietOptions, multi: true }],
 };
 const sheetTitles: Record<string, string> = {
-  sleep: "睡眠", notes: "心情", discomfort: "经期体感", habits: "好习惯", symptoms: "身体症状",
-  intercourse: "同房", leucorrhea: "白带观察", coc: "避孕方式", ovuTest: "排卵试纸",
-  pregTest: "早孕试纸", babyRecord: "宝宝记录", prepareDiet: "备孕饮食",
+  sleep: "睡眠评估", notes: "心理评估", discomfort: "经期指征", habits: "生活干预", symptoms: "体征监测",
+  intercourse: "性生活", leucorrhea: "分泌物监测", coc: "避孕档案", ovuTest: "排卵监测",
+  pregTest: "HCG检测", babyRecord: "育儿档案", prepareDiet: "备孕营养",
 };
 
 const homeSheetFields = computed<SheetField[]>(() => sheetFieldsMap[periodStore.activeSheet ?? ""] ?? []);
-const homeSheetTitle = computed(() => sheetTitles[periodStore.activeSheet ?? ""] || "快捷记录");
+const homeSheetTitle = computed(() => sheetTitles[periodStore.activeSheet ?? ""] || "数据录入");
 
-// chip key → period sheet type(与周期页字段对齐)
 const chipToSheet: Record<string, string> = {
   mood: "notes", sleep: "sleep", habits: "habits", symptom: "symptoms",
   period: "discomfort", weight: "weight", bodyTemp: "bodyTemp",
@@ -409,12 +402,11 @@ function openQuickRecord(item: { key: TodoKey; primary?: boolean }) {
     periodStore.openSheet(sheet as any, date, {});
     return;
   }
-  // 无对应 sheet 的类型:直接默认值保存
   if (!sheet || !sheetFieldsMap[sheet]) {
     periodStore.saveDailyRecord(date, { recordDate: date }, date).then(() => {
-      appStore.showToast("已记录", "success");
+      appStore.showToast("已归档", "success");
     }).catch((e: any) => {
-      appStore.showToast(e?.message || "记录失败", "error");
+      appStore.showToast(e?.message || "操作失败", "error");
     });
     return;
   }
@@ -462,10 +454,10 @@ async function saveHomeSheet() {
       if (sheet === "prepareDiet") { body.dietTags = form.dietTags ?? []; }
       await periodStore.saveDailyRecord(date, body, date);
     }
-    appStore.showToast("已保存", "success");
+    appStore.showToast("数据已保存", "success");
     closeHomeSheet();
   } catch (e: any) {
-    appStore.showToast(e?.message || "保存失败", "error");
+    appStore.showToast(e?.message || "数据保存失败", "error");
   } finally {
     saving.value = false;
   }
@@ -492,220 +484,125 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
-.home-page {
-  padding: $gap-md $gap-md $gap-xl;
-  min-height: 100vh;
-}
-
-/* ====== 今日速览：手绘风卡片 ====== */
-.today-card {
-  position: relative;
-  margin-bottom: $gap-md;
-  padding: 24rpx 26rpx 22rpx;
-  background: #fffaf3;
-  border: 2rpx dashed #f9a8d4;
-  border-radius: 22rpx 18rpx 24rpx 16rpx;
-  box-shadow: 0 4rpx 14rpx rgba(244, 114, 182, 0.08);
-  transform: rotate(-0.4deg);
-
-  &::before,
-  &::after {
-    content: "";
-    position: absolute;
-    background: #fbcfe8;
-    opacity: .5;
-  }
-  &::before {
-    top: -2rpx; left: 18%;
-    width: 60%; height: 4rpx;
-    border-radius: 4rpx;
-    transform: rotate(-1.2deg);
-  }
-  &::after {
-    bottom: -2rpx; right: 14%;
-    width: 50%; height: 4rpx;
-    border-radius: 4rpx;
-    transform: rotate(1deg);
-  }
-
-  &__head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    margin-bottom: $gap-md;
-  }
-  &__title {
-    font-size: $font-xl;
-    font-weight: 900;
-    color: $ink;
-    letter-spacing: 1rpx;
-  }
-  &__date {
-    color: $muted;
-    font-size: $font-xs;
-    font-weight: 600;
-  }
-  &__streak {
-    color: $rose-dark;
-    font-weight: 800;
-    &--empty { color: $muted; font-weight: 600; }
-  }
-}
-
-.today-rows {
-  display: flex;
-  flex-direction: column;
-  gap: $gap-sm;
-}
-
-.today-row {
-  display: flex;
-  flex-direction: column;
-  gap: 10rpx;
-  padding: 14rpx 16rpx;
-  border-radius: 16rpx 20rpx 18rpx 14rpx;
-  background: #fff;
-  border: 2rpx dashed rgba(244, 114, 182, 0.32);
-
-  &--done { border-color: rgba(34, 197, 94, 0.32); }
-  &--todo { border-color: rgba(244, 114, 182, 0.32); }
-
-  &__label {
-    font-size: 22rpx;
-    font-weight: 800;
-    color: $muted;
-    letter-spacing: 1rpx;
-  }
-  &--done &__label { color: #15803d; }
-  &--todo &__label { color: $rose-dark; }
-
-  &__chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10rpx;
-  }
-  &__empty {
-    color: $muted;
-    font-size: 22rpx;
-    font-weight: 600;
-  }
-}
-
-.today-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6rpx;
-  padding: 10rpx 18rpx;
-  border-radius: 999rpx;
-  font-size: 22rpx;
-  font-weight: 700;
-  line-height: 1.2;
-  white-space: nowrap;
-  border: 2rpx solid transparent;
-  transition: transform .12s ease, background .12s ease;
-
-  &--done {
-    background: #f0fdf4;
-    color: #166534;
-    border-color: #bbf7d0;
-  }
-
-  &--todo {
-    background: #fff1f2;
-    color: $rose-dark;
-    border-color: #fbcfe8;
-    border-style: dashed;
-  }
-  &--primary {
-    background: linear-gradient(135deg, $rose, $rose-dark);
-    color: #fff;
-    border-color: transparent;
-    box-shadow: 0 4rpx 12rpx rgba(236, 72, 153, .22);
-  }
-  &--pressed { transform: scale(0.96); }
-}
-
-/* ====== 旧样式保留 ====== */
-.home-section-title { font-size:$font-md;font-weight:800;margin:$gap-lg 0 $gap-sm; }.marketing-card { display:flex;justify-content:space-between;align-items:center;gap:$gap-md;margin-bottom:$gap-sm; }.marketing-card__tag,.marketing-card__title,.marketing-card__copy { display:block; }.marketing-card__tag { color:$rose-dark;font-size:$font-xs;font-weight:700; }.marketing-card__title { font-size:$font-sm;font-weight:800; }.marketing-card__copy { color:$muted;font-size:$font-xs; }
+.home-page { padding: $gap-md $gap-md $gap-xl; min-height: 100vh; }
 
 .home-hero {
-  padding: $gap-xl $gap-sm $gap-lg;
-  &__greeting {
-    display: flex;
-    align-items: center;
-    gap: $gap-sm;
-  }
-  &__wave { font-size: 48rpx; }
-  &__name { font-size: $font-xl; font-weight: 800; color: $ink; }
-  &__date { font-size: $font-sm; color: $muted; margin-top: $gap-xs; }
+  padding: $gap-lg $gap-sm;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
 }
+.home-hero__greeting { display: flex; align-items: center; }
+.home-hero__name { font-size: $font-xl; font-weight: 700; color: $ink; }
+.home-hero__date { font-size: $font-sm; color: $muted; font-weight: 500; }
+
+.dashboard-module {
+  margin-bottom: $gap-md;
+}
+.module-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid $line;
+  padding-bottom: $gap-sm;
+  margin-bottom: $gap-sm;
+}
+.module-title { font-size: $font-lg; font-weight: 700; color: $ink; }
+.module-meta { font-size: $font-xs; font-weight: 600; }
+
+.task-sections { display: flex; flex-direction: column; gap: $gap-md; }
+.task-section__head { margin-bottom: $gap-xs; }
+.task-section__label { font-size: 24rpx; font-weight: 700; color: $muted; }
+
+.task-chips { display: flex; flex-wrap: wrap; gap: 16rpx; }
+.task-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 12rpx 20rpx;
+  border-radius: $radius-sm;
+  font-size: 24rpx;
+  font-weight: 600;
+  border: 1px solid transparent;
+  background: $surface;
+  transition: all 0.2s;
+}
+.task-chip--done {
+  background: #f0fdf4;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+.task-chip--todo {
+  background: $paper;
+  color: $ink;
+  border-color: $line;
+}
+.task-chip--primary {
+  background: $blush;
+  color: $rose-dark;
+  border-color: $rose-dark;
+}
+.task-chip--pressed { opacity: 0.8; transform: scale(0.98); }
+.task-empty { font-size: 24rpx; color: $muted; font-style: italic; }
 
 .home-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: $gap-sm;
+  gap: $gap-md;
   margin-bottom: $gap-md;
 }
-
 .home-grid__item {
-  background: $paper;
-  border-radius: $radius-md;
-  padding: $gap-lg $gap-md;
-  text-align: center;
-  box-shadow: $shadow-sm;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: $gap-xs;
+  text-align: center;
+  padding: $gap-lg $gap-sm;
 }
-
-.home-grid__icon { font-size: 48rpx; }
+.home-grid__icon { font-size: 40rpx; margin-bottom: 8rpx; }
 .home-grid__title { font-size: $font-md; font-weight: 700; color: $ink; }
-.home-grid__desc { font-size: $font-xs; color: $muted; }
+.home-grid__desc { font-size: 20rpx; color: $muted; margin-top: 4rpx;}
 
-.home-booking-card {
+.action-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: $paper;
-  border-radius: $radius-lg;
-  padding: $gap-lg;
-  box-shadow: $shadow-sm;
-
-  &__title { font-size: $font-md; font-weight: 700; color: $ink; display: block; }
-  &__desc { font-size: $font-sm; color: $muted; margin-top: 4rpx; }
-
-  &__action {
-    background: $blush;
-    color: $rose-dark;
-    padding: 12rpx 32rpx;
-    border-radius: $radius-full;
-    font-size: $font-sm;
-    font-weight: 700;
-    white-space: nowrap;
-  }
+  margin-bottom: $gap-md;
 }
+.action-card__info { display: flex; flex-direction: column; }
+.action-card__title { font-size: $font-md; font-weight: 700; color: $ink; }
+.action-card__desc { font-size: 22rpx; color: $muted; margin-top: 4rpx; }
+.action-card__btn { margin: 0; font-size: 24rpx; padding: 16rpx 32rpx; }
 
-.home-loading {
-  text-align: center;
-  padding: $gap-xl;
-  color: $muted;
-  font-size: $font-sm;
+.section-title { font-size: $font-md; font-weight: 700; color: $muted; margin: $gap-lg 0 $gap-sm; }
+.notice-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $gap-sm;
+  padding: $gap-md $gap-lg;
 }
-.marketing-backdrop { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end; background: rgba(39, 39, 42, .46); backdrop-filter: blur(8rpx); }
-.quick-sheet { display: flex; width: 100%; box-sizing: border-box; flex-direction: column; padding: $gap-md $gap-lg calc(36rpx + env(safe-area-inset-bottom)); border-radius: 40rpx 40rpx 0 0; background: $paper; max-height: 70vh; }
-.quick-sheet__handle { width: 80rpx; height: 8rpx; margin: 0 auto $gap-md; border-radius: $radius-full; background: #e4e4e7; }
-.quick-sheet__title { display: block; margin-bottom: $gap-md; color: $ink; font-size: $font-lg; font-weight: 800; text-align: center; }
-.quick-sheet__body { max-height: 56vh; overflow-y: auto; }
-.quick-sheet__btn { width: 100%; margin-top: $gap-md; }
-.form-section { margin-bottom: 18rpx; padding: 20rpx; border-radius: $radius-lg; background: $surface; }
-.form-section__title { display: block; margin-bottom: 14rpx; font-size: $font-sm; font-weight: 800; }
-.form-input { width: 100%; box-sizing: border-box; padding: 16rpx 20rpx; border: 2rpx solid $line; border-radius: $radius-md; background: $paper; font-size: $font-sm; }
-.marketing-sheet { display: flex; width: 100%; max-height: 82vh; box-sizing: border-box; flex-direction: column; padding: $gap-md $gap-lg calc(36rpx + env(safe-area-inset-bottom)); border-radius: 40rpx 40rpx 0 0; background: $paper; }
-.marketing-sheet__handle { width: 80rpx; height: 8rpx; margin: 0 auto $gap-lg; border-radius: $radius-full; background: #e4e4e7; }
-.marketing-sheet__tag { color: $rose-dark; font-size: $font-xs; font-weight: 800; }
-.marketing-sheet__title { display: block; margin-top: 4rpx; color: $ink; font-size: $font-xl; font-weight: 800; line-height: 1.35; }
-.marketing-sheet__summary { display: block; margin-top: $gap-sm; color: $muted; font-size: $font-sm; line-height: 1.6; }
-.marketing-sheet__copy { max-height: 38vh; margin: $gap-lg 0; color: $ink; font-size: $font-sm; line-height: 1.9; white-space: pre-wrap; }
-.marketing-sheet__button { width: 100%; flex: 0 0 auto; border-radius: $radius-full; background: $ink; color: #fff; font-size: $font-sm; font-weight: 700; }
+.notice-card__content { display: flex; flex-direction: column; gap: 4rpx; }
+.notice-card__tag { display: inline-block; padding: 2rpx 8rpx; background: $blush; color: $rose-dark; border-radius: 4rpx; font-size: 20rpx; font-weight: bold; align-self: flex-start;}
+.notice-card__title { font-size: $font-sm; font-weight: 700; color: $ink; }
+.notice-card__copy { font-size: 22rpx; color: $muted; }
+.notice-card__arrow { font-size: 32rpx; color: $muted; }
+
+.loading-state { text-align: center; padding: $gap-xl; color: $muted; font-size: $font-sm; }
+
+/* 弹窗统一样式 */
+.overlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); padding: $gap-xl; }
+.sheet-dialog { width: 100%; max-height: 80vh; background: $paper; border-radius: $radius-lg; display: flex; flex-direction: column; box-shadow: $shadow-lg; overflow: hidden;}
+.sheet-dialog__header { display: flex; justify-content: space-between; align-items: center; padding: $gap-md $gap-lg; border-bottom: 1px solid $line; background: $surface; }
+.sheet-dialog__title { font-size: $font-md; font-weight: 700; color: $ink; }
+.sheet-dialog__close { font-size: 40rpx; color: $muted; padding: 0 10rpx;}
+.sheet-dialog__body { padding: $gap-lg; flex: 1; min-height: 0; overflow-y: auto; }
+.sheet-dialog__footer { padding: $gap-md $gap-lg; border-top: 1px solid $line; }
+.sheet-dialog__btn { width: 100%; margin: 0; }
+.sheet-dialog__tag { color: $rose-dark; font-size: $font-xs; font-weight: bold; }
+.sheet-dialog__summary { display: block; margin-top: $gap-sm; color: $muted; font-size: $font-sm; }
+.sheet-dialog__text { display: block; margin-top: $gap-md; color: $ink; font-size: $font-sm; line-height: 1.8; }
+
+.form-section { margin-bottom: $gap-md; }
+.form-section__title { display: block; margin-bottom: 12rpx; font-size: $font-sm; font-weight: 600; color: $muted; }
+.form-input { width: 100%; height: 80rpx; background: $paper; border: 1px solid $line; border-radius: $radius-sm; padding: 0 $gap-md; font-size: $font-md; color: $ink; box-sizing: border-box;}
 </style>
