@@ -1,0 +1,99 @@
+{
+  "pages": [
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationBarTitleText": "登录",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/home/index",
+      "style": {
+        "navigationBarTitleText": "首页",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/period/index",
+      "style": {
+        "navigationBarTitleText": "周期",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/history/index",
+      "style": {
+        "navigationBarTitleText": "历史档案",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/chat/index",
+      "style": {
+        "navigationBarTitleText": "小美",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/booking/index",
+      "style": {
+        "navigationBarTitleText": "问诊预约",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/health/index",
+      "style": {
+        "navigationBarTitleText": "健康档案",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/profile/index",
+      "style": {
+        "navigationBarTitleText": "我的",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/services/index",
+      "style": {
+        "navigationBarTitleText": "健康服务",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/archive/index",
+      "style": {
+        "navigationBarTitleText": "健康档案",
+        "navigationStyle": "custom"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#fafafa"
+  },
+  "tabBar": {
+    "color": "#a1a1aa",
+    "selectedColor": "#ec4899",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      { "pagePath": "pages/home/index", "text": "首页", "iconPath": "static/tabbar/home-normal.png", "selectedIconPath": "static/tabbar/home-selected.png" },
+      { "pagePath": "pages/period/index", "text": "周期", "iconPath": "static/tabbar/period-normal.png", "selectedIconPath": "static/tabbar/period-selected.png" },
+      { "pagePath": "pages/chat/index", "text": "小美", "iconPath": "static/tabbar/chat-normal.png", "selectedIconPath": "static/tabbar/chat-selected.png" },
+      { "pagePath": "pages/health/index", "text": "档案", "iconPath": "static/tabbar/health-normal.png", "selectedIconPath": "static/tabbar/health-selected.png" },
+      { "pagePath": "pages/profile/index", "text": "我的", "iconPath": "static/tabbar/profile-normal.png", "selectedIconPath": "static/tabbar/profile-selected.png" }
+    ]
+  },
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^u-(.*)": "@/components/u-$1/u-$1.vue"
+    }
+  }
+}
